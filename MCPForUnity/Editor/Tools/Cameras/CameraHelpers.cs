@@ -48,8 +48,8 @@ namespace MCPForUnity.Editor.Tools.Cameras
 
         private static void DetectCinemachine()
         {
-            _cmCameraType = UnityTypeResolver.ResolveComponent("CinemachineCamera");
-            _cmBrainType = UnityTypeResolver.ResolveComponent("CinemachineBrain");
+            using _cmCameraType = UnityTypeResolver.ResolveComponent("CinemachineCamera");
+            using _cmBrainType = UnityTypeResolver.ResolveComponent("CinemachineBrain");
             _hasCinemachine = _cmCameraType != null && _cmBrainType != null;
         }
 
@@ -181,7 +181,7 @@ namespace MCPForUnity.Editor.Tools.Cameras
         internal static int ReadCinemachinePriority(Component cmCamera)
         {
             if (cmCamera == null) return 0;
-            using var so = new SerializedObject(cmCamera);
+            var so = new SerializedObject(cmCamera);
             var priorityProp = so.FindProperty("Priority");
             if (priorityProp == null) return 0;
             var enabledProp = priorityProp.FindPropertyRelative("Enabled");

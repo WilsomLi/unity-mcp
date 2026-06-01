@@ -22,7 +22,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
     /// </summary>
     public class McpToolsSection
     {
-        private readonly Dictionary<string, Toggle> toolToggleMap = new();
+        private readonly Dictionary<string, Toggle> toolToggleMap = new Dictionary<string, Toggle>();
         private Toggle projectScopedToolsToggle;
         private Label summaryLabel;
         private Label noteLabel;
@@ -31,12 +31,12 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
         private Button rescanButton;
         private Button reconfigureButton;
         private VisualElement categoryContainer;
-        private List<ToolMetadata> allTools = new();
-        private readonly Dictionary<string, Toggle> groupToggleMap = new();
-        private readonly List<(Foldout foldout, string title, List<ToolMetadata> tools)> foldoutEntries = new();
+        private List<ToolMetadata> allTools = new List<ToolMetadata>();
+        private readonly Dictionary<string, Toggle> groupToggleMap = new Dictionary<string, Toggle>();
+        private readonly List<(Foldout foldout, string title, List<ToolMetadata> tools)> foldoutEntries = new List<(Foldout foldout, string title, List<ToolMetadata> tools)>();
 
         /// <summary>Human-friendly names for tool groups shown in the UI.</summary>
-        private static readonly Dictionary<string, string> GroupDisplayNames = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> GroupDisplayNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "core", "Core Tools" },
             { "vfx", "VFX & Shaders" },
@@ -619,7 +619,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var captureLabel = new Label("Capture:");
             captureLabel.style.marginTop = 6;
-            captureLabel.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
+            using captureLabel.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
@@ -643,7 +643,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var label = new Label("Max commands per batch:");
             label.style.marginRight = 8;
-            label.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
+            using label.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
             container.Add(label);
 
             int currentValue = EditorPrefs.GetInt(

@@ -45,7 +45,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
         private CancellationTokenSource _connectionCts;
         private Task _receiveTask;
         private Task _keepAliveTask;
-        private readonly SemaphoreSlim _sendLock = new(1, 1);
+        private readonly SemaphoreSlim _sendLock = new SemaphoreSlim(1, 1);
 
         private Uri _endpointUri;
         private string _sessionId;
@@ -211,7 +211,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
 
             try
             {
-                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(_lifecycleCts.Token);
+                var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(_lifecycleCts.Token);
                 timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
                 await SendPongAsync(timeoutCts.Token).ConfigureAwait(false);
                 return true;
@@ -417,7 +417,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
 
             byte[] rentedBuffer = System.Buffers.ArrayPool<byte>.Shared.Rent(8192);
             var buffer = new ArraySegment<byte>(rentedBuffer);
-            using var ms = new MemoryStream(8192);
+            var ms = new MemoryStream(8192);
 
             try
             {
@@ -619,7 +619,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
             string responseJson;
             try
             {
-                using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
                 timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)));
                 responseJson = await TransportCommandDispatcher.ExecuteCommandJsonAsync(commandEnvelope.ToString(Formatting.None), timeoutCts.Token).ConfigureAwait(false);
             }

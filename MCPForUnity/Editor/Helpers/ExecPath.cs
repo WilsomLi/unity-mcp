@@ -200,7 +200,7 @@ namespace MCPForUnity.Editor.Helpers
                         : (extraPathPrepend + System.IO.Path.PathSeparator + currentPath);
                 }
 
-                using var process = new Process { StartInfo = psi, EnableRaisingEvents = false };
+                var process = new Process { StartInfo = psi, EnableRaisingEvents = false };
 
                 var sb = new StringBuilder();
                 var se = new StringBuilder();
@@ -260,7 +260,7 @@ namespace MCPForUnity.Editor.Helpers
                 string path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
                 psi.EnvironmentVariables["PATH"] = string.IsNullOrEmpty(path) ? prependPath : (prependPath + Path.PathSeparator + path);
 
-                using var p = Process.Start(psi);
+                var p = Process.Start(psi);
                 if (p == null) return null;
 
                 var so = new StringBuilder();
@@ -303,7 +303,7 @@ namespace MCPForUnity.Editor.Helpers
                     psi.EnvironmentVariables["PATH"] = effectivePath;
                 }
 
-                using var p = Process.Start(psi);
+                var p = Process.Start(psi);
                 if (p == null) return null;
 
                 var so = new StringBuilder();

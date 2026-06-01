@@ -1,6 +1,11 @@
 using System;
 using UnityEditor;
 using UnityEditor.Build;
+#if UNITY_2021_2_OR_NEWER
+using McpBuildTargetKey = UnityEditor.Build.NamedBuildTarget;
+#else
+using McpBuildTargetKey = UnityEditor.BuildTargetGroup;
+#endif
 
 namespace MCPForUnity.Editor.Tools.Build
 {
@@ -63,12 +68,16 @@ namespace MCPForUnity.Editor.Tools.Build
             }
         }
 
-        public static NamedBuildTarget GetNamedBuildTarget(BuildTarget target)
+        public static McpBuildTargetKey GetNamedBuildTarget(BuildTarget target)
         {
+#if UNITY_2021_2_OR_NEWER
             return NamedBuildTarget.FromBuildTargetGroup(GetTargetGroup(target));
+#else
+            return GetTargetGroup(target);
+#endif
         }
 
-        public static string TryResolveNamedBuildTarget(string name, out NamedBuildTarget namedTarget)
+        public static string TryResolveNamedBuildTarget(string name, out McpBuildTargetKey namedTarget)
         {
             if (!TryResolveBuildTarget(name, out var buildTarget))
             {
@@ -85,7 +94,12 @@ namespace MCPForUnity.Editor.Tools.Build
                     : $"Build target group could not be resolved for target '{buildTarget}'.";
             }
 
+
+#if UNITY_2021_2_OR_NEWER
             namedTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
+#else
+            namedTarget = targetGroup;
+#endif
             return null;
         }
 
@@ -154,12 +168,16 @@ namespace MCPForUnity.Editor.Tools.Build
 
         public static int ResolveSubtarget(string subtarget)
         {
+#if UNITY_2021_2_OR_NEWER
             if (string.IsNullOrEmpty(subtarget))
                 return (int)StandaloneBuildSubtarget.Player;
             string lower = subtarget.ToLowerInvariant();
             if (lower == "server")
                 return (int)StandaloneBuildSubtarget.Server;
             return (int)StandaloneBuildSubtarget.Player;
+#else
+            return 0;
+#endif
         }
     }
 }

@@ -49,15 +49,18 @@ namespace MCPForUnity.Editor.Tools.Build
             BuildOptions buildOptions,
             int subtarget)
         {
-            return new BuildPlayerOptions
+            var options = new BuildPlayerOptions
             {
                 target = target,
                 targetGroup = BuildTargetMapping.GetTargetGroup(target),
                 locationPathName = outputPath,
                 scenes = scenes ?? GetDefaultScenes(),
-                options = buildOptions,
-                subtarget = subtarget
+                options = buildOptions
             };
+#if UNITY_2021_2_OR_NEWER
+            options.subtarget = subtarget;
+#endif
+            return options;
         }
 
         public static BuildOptions ParseBuildOptions(string[] optionNames, bool development)

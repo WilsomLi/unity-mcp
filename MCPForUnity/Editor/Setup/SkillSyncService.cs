@@ -114,7 +114,7 @@ namespace MCPForUnity.Editor.Setup
         private static string GetLastSyncedCommitKey(string repoUrl, string branch)
         {
             var scope = $"{repoUrl}|{branch}|{NormalizeRemotePath(SkillSubdir)}";
-            using var sha256 = SHA256.Create();
+            var sha256 = SHA256.Create();
             var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(scope));
             var suffix = BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
             return $"{LastSyncedCommitKeyPrefix}.{suffix}";
@@ -176,7 +176,7 @@ namespace MCPForUnity.Editor.Setup
 
         private static RemoteSnapshot FetchRemoteSnapshot(GitHubRepoInfo repoInfo, string branch, string subdir, Action<string> log)
         {
-            using var client = CreateGitHubClient();
+            var client = CreateGitHubClient();
             var commitSha = FetchBranchHeadCommitSha(client, repoInfo, branch, log);
             var treeApiUrl = BuildTreeApiUrl(repoInfo, commitSha);
             log?.Invoke($"Fetching remote directory tree at commit {ShortCommit(commitSha)}...");
@@ -290,7 +290,7 @@ namespace MCPForUnity.Editor.Setup
 
         internal static string DownloadString(HttpClient client, string url)
         {
-            using var response = client.GetAsync(url).GetAwaiter().GetResult();
+            var response = client.GetAsync(url).GetAwaiter().GetResult();
             var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
             if (!response.IsSuccessStatusCode)
             {
@@ -302,7 +302,7 @@ namespace MCPForUnity.Editor.Setup
 
         private static byte[] DownloadBytes(HttpClient client, string url)
         {
-            using var response = client.GetAsync(url).GetAwaiter().GetResult();
+            var response = client.GetAsync(url).GetAwaiter().GetResult();
             if (!response.IsSuccessStatusCode)
             {
                 var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -435,7 +435,7 @@ namespace MCPForUnity.Editor.Setup
 
         private static void ApplyPlan(GitHubRepoInfo repoInfo, string commitSha, string remoteSubdir, string targetRoot, SyncPlan plan, StringComparison pathComparison, Action<string> log)
         {
-            using var client = CreateGitHubClient();
+            var client = CreateGitHubClient();
             foreach (var relativePath in plan.Added.Concat(plan.Updated))
             {
                 var remoteFilePath = CombineRemotePath(remoteSubdir, relativePath);
@@ -496,7 +496,7 @@ namespace MCPForUnity.Editor.Setup
         internal static string ComputeGitBlobSha1(byte[] bytes)
         {
             var headerBytes = Encoding.UTF8.GetBytes($"blob {bytes.Length}\0");
-            using var sha1 = SHA1.Create();
+            var sha1 = SHA1.Create();
             sha1.TransformBlock(headerBytes, 0, headerBytes.Length, null, 0);
             sha1.TransformFinalBlock(bytes, 0, bytes.Length);
             return BitConverter.ToString(sha1.Hash ?? Array.Empty<byte>()).Replace("-", string.Empty).ToLowerInvariant();
@@ -808,9 +808,9 @@ namespace MCPForUnity.Editor.Setup
 
         internal sealed class SyncPlan
         {
-            public List<string> Added { get; } = new();
-            public List<string> Updated { get; } = new();
-            public List<string> Deleted { get; } = new();
+            public List<string> Added { get; } = new List<string>();
+            public List<string> Updated { get; } = new List<string>();
+            public List<string> Deleted { get; } = new List<string>();
         }
     }
 }

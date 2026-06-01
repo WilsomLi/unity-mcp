@@ -34,10 +34,10 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
     {
         private static TcpListener listener;
         private static bool isRunning = false;
-        private static readonly object lockObj = new();
-        private static readonly object startStopLock = new();
-        private static readonly object clientsLock = new();
-        private static readonly HashSet<TcpClient> activeClients = new();
+        private static readonly object lockObj = new object();
+        private static readonly object startStopLock = new object();
+        private static readonly object clientsLock = new object();
+        private static readonly HashSet<TcpClient> activeClients = new HashSet<TcpClient>();
         private static CancellationTokenSource cts;
         private static Task listenerTask;
         private static int processingCommands = 0;
@@ -47,7 +47,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
         private static double nextStartAt = 0.0f;
         private static double nextHeartbeatAt = 0.0f;
         private static int heartbeatSeq = 0;
-        private static Dictionary<string, QueuedCommand> commandQueue = new();
+        private static Dictionary<string, QueuedCommand> commandQueue = new Dictionary<string, QueuedCommand>();
         private static int mainThreadId;
         private static int currentUnityPort = 6400;
         private static bool isAutoConnectMode = false;
@@ -110,7 +110,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
 
             string fullPath = Path.Combine(
                 Application.dataPath,
-                path.StartsWith("Assets/") ? path[7..] : path
+                path.StartsWith("Assets/") ? path.Substring(7) : path
             );
             return Directory.Exists(fullPath);
         }
@@ -493,7 +493,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                     {
                         string handshake = "WELCOME UNITY-MCP 1 FRAMING=1\n";
                         byte[] handshakeBytes = System.Text.Encoding.ASCII.GetBytes(handshake);
-                        using var cts = new CancellationTokenSource(FrameIOTimeoutMs);
+                        var cts = new CancellationTokenSource(FrameIOTimeoutMs);
 #if NETSTANDARD2_1 || NET6_0_OR_GREATER
                         await stream.WriteAsync(handshakeBytes.AsMemory(0, handshakeBytes.Length), cts.Token).ConfigureAwait(false);
 #else
@@ -570,7 +570,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                             string response;
                             try
                             {
-                                using var respCts = new CancellationTokenSource(FrameIOTimeoutMs);
+                                var respCts = new CancellationTokenSource(FrameIOTimeoutMs);
                                 var completed = await Task.WhenAny(tcs.Task, Task.Delay(FrameIOTimeoutMs, respCts.Token)).ConfigureAwait(false);
                                 if (completed == tcs.Task)
                                 {
@@ -672,7 +672,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                     throw new IOException("Read timed out");
                 }
 
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(cancel);
                 if (remainingTimeout != Timeout.Infinite)
                 {
                     cts.CancelAfter(remainingTimeout);
@@ -702,7 +702,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
 
         private static Task WriteFrameAsync(NetworkStream stream, byte[] payload)
         {
-            using var cts = new CancellationTokenSource(FrameIOTimeoutMs);
+            var cts = new CancellationTokenSource(FrameIOTimeoutMs);
             return WriteFrameAsync(stream, payload, cts.Token);
         }
 
@@ -805,7 +805,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                     {
                         if (kvp.Value.IsExecuting && (nowMs - kvp.Value.EnqueuedAtMs) > staleThresholdMs)
                         {
-                            staleIds ??= new List<string>();
+                            if (staleIds == null) staleIds = new List<string>();
                             staleIds.Add(kvp.Key);
                         }
                     }
@@ -870,7 +870,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                             status = "error",
                             error = "Invalid JSON format",
                             receivedText = commandText.Length > 50
-                                ? commandText[..50] + "..."
+                                ? commandText.Substring(0, 50) + "..."
                                 : commandText,
                         };
                         tcs.SetResult(JsonConvert.SerializeObject(invalidJsonResponse));
@@ -893,7 +893,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
             {
                 try
                 {
-                    using var cts = new CancellationTokenSource(FrameIOTimeoutMs);
+                    var cts = new CancellationTokenSource(FrameIOTimeoutMs);
                     string response = await TransportCommandDispatcher.ExecuteCommandJsonAsync(payload, cts.Token).ConfigureAwait(true);
                     completionSource.TrySetResult(response);
                 }
@@ -914,7 +914,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                         status = "error",
                         error = ex.Message,
                         receivedText = payload?.Length > 50
-                            ? payload[..50] + "..."
+                            ? payload.Substring(0, 50) + "..."
                             : payload,
                     };
                     completionSource.TrySetResult(JsonConvert.SerializeObject(response));
@@ -1075,7 +1075,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
         {
             try
             {
-                using var sha1 = System.Security.Cryptography.SHA1.Create();
+                var sha1 = System.Security.Cryptography.SHA1.Create();
                 byte[] bytes = System.Text.Encoding.UTF8.GetBytes(input ?? string.Empty);
                 byte[] hashBytes = sha1.ComputeHash(bytes);
                 var sb = new System.Text.StringBuilder();
@@ -1083,7 +1083,7 @@ namespace MCPForUnity.Editor.Services.Transport.Transports
                 {
                     sb.Append(b.ToString("x2"));
                 }
-                return sb.ToString()[..8];
+                return sb.ToString().Substring(0, 8);
             }
             catch
             {
