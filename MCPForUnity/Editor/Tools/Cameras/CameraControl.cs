@@ -174,7 +174,7 @@ namespace MCPForUnity.Editor.Tools.Cameras
             var props = CameraHelpers.ExtractProperties(@params) ?? new JObject();
             Undo.RecordObject(brain, "Set Camera Blend");
 
-            using var so = new SerializedObject(brain);
+            var so = new SerializedObject(brain);
             var defaultBlendProp = so.FindProperty("DefaultBlend") ?? so.FindProperty("m_DefaultBlend");
             if (defaultBlendProp == null)
                 return new ErrorResponse("Could not find DefaultBlend property on CinemachineBrain.");

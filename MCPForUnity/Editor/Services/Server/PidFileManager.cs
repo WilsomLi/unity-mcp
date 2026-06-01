@@ -242,7 +242,7 @@ namespace MCPForUnity.Editor.Services.Server
             if (string.IsNullOrEmpty(input)) return string.Empty;
             try
             {
-                using var sha = SHA256.Create();
+                var sha = SHA256.Create();
                 byte[] bytes = Encoding.UTF8.GetBytes(input);
                 byte[] hash = sha.ComputeHash(bytes);
                 // 8 bytes => 16 hex chars is plenty as a stable fingerprint for our purposes.

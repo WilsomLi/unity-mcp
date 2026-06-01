@@ -173,7 +173,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                 case "sphere":
                 {
                     float radius = sizeToken.Value<float>();
-                    results = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
+                    using results = UnityEngine.Physics.OverlapSphere(position, radius, layerMask);
                     break;
                 }
                 case "box":
@@ -184,7 +184,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                             sizeArr[0].Value<float>(), sizeArr[1].Value<float>(), sizeArr[2].Value<float>());
                     else
                         return new ErrorResponse("3D box overlap 'size' requires [halfX, halfY, halfZ].");
-                    results = UnityEngine.Physics.OverlapBox(position, halfExtents, Quaternion.identity, layerMask);
+                    using results = UnityEngine.Physics.OverlapBox(position, halfExtents, Quaternion.identity, layerMask);
                     break;
                 }
                 case "capsule":
@@ -213,7 +213,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                                 break;
                         }
 
-                        results = UnityEngine.Physics.OverlapCapsule(point0, point1, radius, layerMask);
+                        using results = UnityEngine.Physics.OverlapCapsule(point0, point1, radius, layerMask);
                     }
                     else
                     {
@@ -387,7 +387,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                 case "sphere":
                 {
                     float radius = sizeToken.Value<float>();
-                    hit = UnityEngine.Physics.SphereCast(origin, radius, direction, out hitInfo, maxDistance, layerMask, triggerInteraction);
+                    using hit = UnityEngine.Physics.SphereCast(origin, radius, direction, out hitInfo, maxDistance, layerMask, triggerInteraction);
                     break;
                 }
                 case "box":
@@ -398,7 +398,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                             sizeArr[0].Value<float>(), sizeArr[1].Value<float>(), sizeArr[2].Value<float>());
                     else
                         return new ErrorResponse("3D box shapecast 'size' requires [halfX, halfY, halfZ].");
-                    hit = UnityEngine.Physics.BoxCast(origin, halfExtents, direction, out hitInfo, Quaternion.identity, maxDistance, layerMask, triggerInteraction);
+                    using hit = UnityEngine.Physics.BoxCast(origin, halfExtents, direction, out hitInfo, Quaternion.identity, maxDistance, layerMask, triggerInteraction);
                     break;
                 }
                 case "capsule":
@@ -437,7 +437,7 @@ namespace MCPForUnity.Editor.Tools.Physics
                         }
                     }
 
-                    hit = UnityEngine.Physics.CapsuleCast(pt1, pt2, radius, direction, out hitInfo, maxDistance, layerMask, triggerInteraction);
+                    using hit = UnityEngine.Physics.CapsuleCast(pt1, pt2, radius, direction, out hitInfo, maxDistance, layerMask, triggerInteraction);
                     break;
                 }
                 default:

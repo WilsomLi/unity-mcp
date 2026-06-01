@@ -130,7 +130,7 @@ namespace MCPForUnity.Editor.Tools.Cameras
             Undo.RecordObject(cmCamera, "Set Cinemachine Lens");
 
             // Lens is a struct field — use SerializedProperty for reliable setting
-            using var so = new SerializedObject(cmCamera);
+            var so = new SerializedObject(cmCamera);
             var lensProp = so.FindProperty("Lens") ?? so.FindProperty("m_Lens");
             if (lensProp == null)
                 return new ErrorResponse("Could not find Lens property on CinemachineCamera.");
@@ -161,7 +161,7 @@ namespace MCPForUnity.Editor.Tools.Cameras
             int priority = ParamCoercion.CoerceInt(props["priority"], 10);
 
             // PrioritySettings is a struct with Enabled + m_Value — use SerializedProperty
-            using var so = new SerializedObject(cmCamera);
+            var so = new SerializedObject(cmCamera);
             var priorityProp = so.FindProperty("Priority");
             if (priorityProp != null)
             {

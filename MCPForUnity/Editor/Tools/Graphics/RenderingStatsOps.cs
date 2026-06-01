@@ -5,8 +5,10 @@ using MCPForUnity.Editor.Helpers;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
+#if UNITY_2020_2_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
+#endif
 using UnityEngine.Profiling;
 using UProfiler = UnityEngine.Profiling.Profiler;
 
@@ -39,11 +41,14 @@ namespace MCPForUnity.Editor.Tools.Graphics
         // === stats_get ===
         internal static object GetStats(JObject @params)
         {
+#if !UNITY_2020_2_OR_NEWER
+            return new ErrorResponse("Rendering stats require Unity 2020.2 or newer (ProfilerRecorder is unavailable in Unity 2019.4).");
+#else
             var stats = new Dictionary<string, object>();
 
             foreach (var (counterName, jsonKey) in COUNTER_MAP)
             {
-                using var recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, counterName);
+                var recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, counterName);
                 stats[jsonKey] = recorder.Valid ? recorder.CurrentValue : 0;
             }
 
@@ -53,11 +58,15 @@ namespace MCPForUnity.Editor.Tools.Graphics
                 message = "Rendering stats captured.",
                 data = stats
             };
+#endif
         }
 
         // === stats_list_counters ===
         internal static object ListCounters(JObject @params)
         {
+#if !UNITY_2020_2_OR_NEWER
+            return new ErrorResponse("Profiler counter listing requires Unity 2020.2 or newer (ProfilerRecorder is unavailable in Unity 2019.4).");
+#else
             var p = new ToolParams(@params);
             string categoryName = p.Get("category");
 
@@ -87,6 +96,7 @@ namespace MCPForUnity.Editor.Tools.Graphics
                 message = $"Found {counters.Count} counters in category '{category.Name}'.",
                 data = new { counters }
             };
+#endif
         }
 
         // === stats_set_scene_debug_mode ===

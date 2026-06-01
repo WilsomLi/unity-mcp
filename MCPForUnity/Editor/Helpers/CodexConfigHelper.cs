@@ -78,7 +78,7 @@ namespace MCPForUnity.Editor.Helpers
             mcpServers["unityMCP"] = unityMCP;
             table["mcp_servers"] = mcpServers;
 
-            using var writer = new StringWriter();
+            var writer = new StringWriter();
             table.WriteTo(writer);
             return writer.ToString();
         }
@@ -106,7 +106,7 @@ namespace MCPForUnity.Editor.Helpers
             }
 
             // Serialize back to TOML
-            using var writer = new StringWriter();
+            var writer = new StringWriter();
             root.WriteTo(writer);
             return writer.ToString();
         }
@@ -160,7 +160,7 @@ namespace MCPForUnity.Editor.Helpers
 
             try
             {
-                using var reader = new StringReader(toml);
+                var reader = new StringReader(toml);
                 return TOML.Parse(reader);
             }
             catch (TomlParseException)
@@ -236,7 +236,7 @@ namespace MCPForUnity.Editor.Helpers
         {
             if (root == null) return;
 
-            if (!root.TryGetNode("features", out var featuresNode) || featuresNode is not TomlTable features)
+            if (!root.TryGetNode("features", out var featuresNode) || !(featuresNode is TomlTable features))
             {
                 features = new TomlTable();
                 root["features"] = features;
