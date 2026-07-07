@@ -65,6 +65,8 @@ namespace MCPForUnity.Editor.Windows
             }
 
             visualTree.CloneTree(rootVisualElement);
+            AddStyleSheet($"{basePath}/Editor/Windows/Components/Common.uss");
+            AddStyleSheet($"{basePath}/Editor/Windows/MCPSetupWindow.uss");
 
             // Cache UI elements
             pythonIndicator = rootVisualElement.Q<VisualElement>("python-indicator");
@@ -259,6 +261,15 @@ namespace MCPForUnity.Editor.Windows
                 versionLabel.text = "Not Found";
                 detailsLabel.text = dep.ErrorMessage ?? "Not available";
                 detailsLabel.style.color = new StyleColor(Color.red);
+            }
+        }
+
+        private void AddStyleSheet(string assetPath)
+        {
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(assetPath);
+            if (styleSheet != null)
+            {
+                rootVisualElement.styleSheets.Add(styleSheet);
             }
         }
     }

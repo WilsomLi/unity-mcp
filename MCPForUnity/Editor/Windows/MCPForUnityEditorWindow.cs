@@ -243,7 +243,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (connectionTree != null)
             {
-                var connectionRoot = connectionTree.Instantiate();
+                var connectionRoot = connectionTree.CloneTree();
                 clientsContainer.Add(connectionRoot);
                 connectionSection = new McpConnectionSection(connectionRoot);
                 connectionSection.OnManualConfigUpdateRequested += () =>
@@ -258,7 +258,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (clientConfigTree != null)
             {
-                var clientConfigRoot = clientConfigTree.Instantiate();
+                var clientConfigRoot = clientConfigTree.CloneTree();
                 clientsContainer.Add(clientConfigRoot);
                 clientConfigSection = new McpClientConfigSection(clientConfigRoot);
 
@@ -282,7 +282,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (advancedTree != null)
             {
-                var advancedRoot = advancedTree.Instantiate();
+                var advancedRoot = advancedTree.CloneTree();
                 advancedContainer.Add(advancedRoot);
                 advancedSection = new McpAdvancedSection(advancedRoot);
 
@@ -315,7 +315,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (validationTree != null)
             {
-                var validationRoot = validationTree.Instantiate();
+                var validationRoot = validationTree.CloneTree();
                 advancedContainer.Add(validationRoot);
                 new McpValidationSection(validationRoot);
             }
@@ -326,7 +326,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (toolsTree != null)
             {
-                var toolsRoot = toolsTree.Instantiate();
+                var toolsRoot = toolsTree.CloneTree();
                 toolsContainer.Add(toolsRoot);
                 toolsSection = new McpToolsSection(toolsRoot);
 
@@ -346,7 +346,7 @@ namespace MCPForUnity.Editor.Windows
             );
             if (resourcesTree != null)
             {
-                var resourcesRoot = resourcesTree.Instantiate();
+                var resourcesRoot = resourcesTree.CloneTree();
                 resourcesContainer.Add(resourcesRoot);
                 resourcesSection = new McpResourcesSection(resourcesRoot);
 
@@ -984,18 +984,27 @@ namespace MCPForUnity.Editor.Windows
 
         private static void BatchUpmAdd(string[] packageIds, Action onComplete = null)
         {
+#if UNITY_2020_1_OR_NEWER
             var request = UnityEditor.PackageManager.Client.AddAndRemove(packageIds, null);
             EditorUtility.DisplayProgressBar("Installing Packages", $"Installing {packageIds.Length} package(s)...", 0.5f);
             PollUpmRequest(request, "install", onComplete);
+#else
+            if (onComplete != null) onComplete();
+#endif
         }
 
         private static void BatchUpmRemove(string[] packageIds, Action onComplete = null)
         {
+#if UNITY_2020_1_OR_NEWER
             var request = UnityEditor.PackageManager.Client.AddAndRemove(null, packageIds);
             EditorUtility.DisplayProgressBar("Removing Packages", $"Removing {packageIds.Length} package(s)...", 0.5f);
             PollUpmRequest(request, "remove", onComplete);
+#else
+            if (onComplete != null) onComplete();
+#endif
         }
 
+#if UNITY_2020_1_OR_NEWER
         private static void PollUpmRequest(UnityEditor.PackageManager.Requests.AddAndRemoveRequest request, string verb, Action onComplete)
         {
             EditorApplication.CallbackFunction pollCallback = null;
@@ -1012,6 +1021,7 @@ namespace MCPForUnity.Editor.Windows
             };
             EditorApplication.update += pollCallback;
         }
+#endif
 
         private static void UninstallRoslyn()
         {

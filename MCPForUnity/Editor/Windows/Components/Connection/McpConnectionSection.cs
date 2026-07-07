@@ -1133,13 +1133,10 @@ namespace MCPForUnity.Editor.Windows.Components.Connection
 
         private static string TransportDisplayName(ConfiguredTransport transport)
         {
-            return transport switch
-            {
-                ConfiguredTransport.Stdio => "stdio",
-                ConfiguredTransport.Http => "HTTP Local",
-                ConfiguredTransport.HttpRemote => "HTTP Remote",
-                _ => "unknown"
-            };
+            if (transport == ConfiguredTransport.Stdio) return "stdio";
+            if (transport == ConfiguredTransport.Http) return "HTTP Local";
+            if (transport == ConfiguredTransport.HttpRemote) return "HTTP Remote";
+            return "unknown";
         }
     }
 }

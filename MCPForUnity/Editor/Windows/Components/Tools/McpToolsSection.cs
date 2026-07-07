@@ -230,7 +230,11 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
             groupCheckbox.tooltip = $"Toggle all tools in \"{title}\" on or off.";
 
             // Prevent the click from propagating to the foldout expand/collapse toggle
+#if UNITY_2020_1_OR_NEWER
             groupCheckbox.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
+#else
+            groupCheckbox.RegisterCallback<MouseDownEvent>(evt => evt.StopPropagation());
+#endif
             groupCheckbox.RegisterValueChangedCallback(evt =>
             {
                 evt.StopPropagation();
@@ -248,11 +252,18 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             if (isExperimental)
             {
+#if UNITY_2021_2_OR_NEWER
                 var warning = new HelpBox(
                     "ProBuilder support is experimental. Mesh editing operations may produce " +
                     "unexpected results on complex topologies. Always save your scene before " +
                     "performing destructive operations.",
                     HelpBoxMessageType.Warning);
+#else
+                var warning = new Label(
+                    "ProBuilder support is experimental. Mesh editing operations may produce " +
+                    "unexpected results on complex topologies. Always save your scene before " +
+                    "performing destructive operations.");
+#endif
                 warning.style.marginTop = 4;
                 warning.style.marginBottom = 2;
                 foldout.Insert(0, warning);
@@ -619,7 +630,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var captureLabel = new Label("Capture:");
             captureLabel.style.marginTop = 6;
-            using captureLabel.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
+            captureLabel.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
 
             var row = new VisualElement();
             row.style.flexDirection = FlexDirection.Row;
@@ -643,7 +654,7 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var label = new Label("Max commands per batch:");
             label.style.marginRight = 8;
-            using label.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
+            label.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Normal;
             container.Add(label);
 
             int currentValue = EditorPrefs.GetInt(
@@ -653,14 +664,14 @@ namespace MCPForUnity.Editor.Windows.Components.Tools
 
             var field = new IntegerField
             {
-                value = Math.Clamp(currentValue, 1, BatchExecute.AbsoluteMaxCommandsPerBatch),
+                value = Math.Max(1, Math.Min(BatchExecute.AbsoluteMaxCommandsPerBatch, currentValue)),
                 style = { width = 60 }
             };
             field.tooltip = $"Number of commands allowed per batch_execute call (1–{BatchExecute.AbsoluteMaxCommandsPerBatch}). Default: {BatchExecute.DefaultMaxCommandsPerBatch}.";
 
             field.RegisterValueChangedCallback(evt =>
             {
-                int clamped = Math.Clamp(evt.newValue, 1, BatchExecute.AbsoluteMaxCommandsPerBatch);
+                int clamped = Math.Max(1, Math.Min(BatchExecute.AbsoluteMaxCommandsPerBatch, evt.newValue));
                 if (clamped != evt.newValue)
                 {
                     field.SetValueWithoutNotify(clamped);

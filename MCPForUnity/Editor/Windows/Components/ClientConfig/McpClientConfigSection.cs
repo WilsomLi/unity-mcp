@@ -12,6 +12,7 @@ using MCPForUnity.Editor.Models;
 using MCPForUnity.Editor.Services;
 using MCPForUnity.Editor.Setup;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -24,7 +25,8 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
     public class McpClientConfigSection
     {
         // UI Elements
-        private DropdownField clientDropdown;
+        private VisualElement clientDropdownContainer;
+        private PopupField<string> clientDropdown;
         private Button configureAllButton;
         private VisualElement clientStatusIndicator;
         private Label clientStatusLabel;
@@ -48,6 +50,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
         // Data
         private readonly List<IMcpClientConfigurator> configurators;
+        private List<string> clientDropdownChoices = new List<string>();
         private readonly Dictionary<IMcpClientConfigurator, DateTime> lastStatusChecks = new Dictionary<IMcpClientConfigurator, DateTime>();
         private readonly HashSet<IMcpClientConfigurator> statusRefreshInFlight = new HashSet<IMcpClientConfigurator>();
         private static readonly TimeSpan StatusRefreshInterval = TimeSpan.FromSeconds(45);
@@ -80,7 +83,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
         private void CacheUIElements()
         {
-            clientDropdown = Root.Q<DropdownField>("client-dropdown");
+            clientDropdownContainer = Root.Q<VisualElement>("client-dropdown-container");
             configureAllButton = Root.Q<Button>("configure-all-button");
             clientStatusIndicator = Root.Q<VisualElement>("client-status-indicator");
             clientStatusLabel = Root.Q<Label>("client-status");
@@ -126,18 +129,29 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
                 });
             }
 
-            var clientNames = configurators.Select(c => c.DisplayName).ToList();
-            clientDropdown.choices = clientNames;
-            if (clientNames.Count > 0)
+            clientDropdownChoices = configurators.Select(c => c.DisplayName).ToList();
+            if (clientDropdownChoices.Count > 0)
             {
-                // Restore last selected client from EditorPrefs
                 string lastClientId = EditorPrefs.GetString(EditorPrefKeys.LastSelectedClientId, string.Empty);
                 int restoredIndex = FindConfiguratorIndex(lastClientId);
-                if (restoredIndex < 0)
-                    restoredIndex = 0;
-
-                clientDropdown.index = restoredIndex;
+                if (restoredIndex < 0) restoredIndex = 0;
                 selectedClientIndex = restoredIndex;
+
+                if (clientDropdownContainer != null)
+                {
+                    clientDropdownContainer.Clear();
+                    clientDropdownContainer.style.flexDirection = FlexDirection.Row;
+                    clientDropdownContainer.style.height = 24;
+                    clientDropdownContainer.style.minHeight = 24;
+                    clientDropdownContainer.style.maxHeight = 24;
+
+                    clientDropdown = new PopupField<string>(clientDropdownChoices, restoredIndex)
+                    {
+                        name = "client-dropdown"
+                    };
+                    clientDropdown.AddToClassList("client-dropdown-field");
+                    clientDropdownContainer.Add(clientDropdown);
+                }
             }
 
             claudeCliPathRow.style.display = DisplayStyle.None;
@@ -153,30 +167,23 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
         private void RegisterCallbacks()
         {
-            clientDropdown.RegisterValueChangedCallback(evt =>
+            if (clientDropdown != null)
             {
-                int selectedIndex = GetIndexForDropdownValue(evt.newValue);
-                if (selectedIndex < 0)
+                clientDropdown.RegisterValueChangedCallback(evt =>
                 {
-                    selectedIndex = clientDropdown.index;
-                }
-                if (selectedIndex < 0 || selectedIndex >= configurators.Count)
-                {
-                    return;
-                }
-
-                selectedClientIndex = selectedIndex;
-                // Persist the selected client so it's restored on next window open
-                if (selectedClientIndex >= 0 && selectedClientIndex < configurators.Count)
-                {
-                    EditorPrefs.SetString(EditorPrefKeys.LastSelectedClientId, configurators[selectedClientIndex].Id);
-                }
-                UpdateClientStatus();
-                UpdateManualConfiguration();
-                UpdateClaudeCliPathVisibility();
-                UpdateClientProjectDirVisibility();
-                UpdateInstallSkillsVisibility();
-            });
+                    int idx = GetIndexForDropdownValue(evt.newValue);
+                    if (idx < 0) idx = clientDropdown.index;
+                    if (idx < 0 || idx >= configurators.Count) return;
+                    selectedClientIndex = idx;
+                    if (selectedClientIndex >= 0 && selectedClientIndex < configurators.Count)
+                        EditorPrefs.SetString(EditorPrefKeys.LastSelectedClientId, configurators[selectedClientIndex].Id);
+                    UpdateClientStatus();
+                    UpdateManualConfiguration();
+                    UpdateClaudeCliPathVisibility();
+                    UpdateClientProjectDirVisibility();
+                    UpdateInstallSkillsVisibility();
+                });
+            }
 
             configureAllButton.clicked += OnConfigureAllClientsClicked;
             configureButton.clicked += OnConfigureClicked;
@@ -200,21 +207,21 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
 
         private string GetStatusDisplayString(McpStatus status)
         {
-            return status switch
+            switch (status)
             {
-                McpStatus.NotConfigured => "Not Configured",
-                McpStatus.Configured => "Configured",
-                McpStatus.Running => "Running",
-                McpStatus.Connected => "Connected",
-                McpStatus.IncorrectPath => "Incorrect Path",
-                McpStatus.CommunicationError => "Communication Error",
-                McpStatus.NoResponse => "No Response",
-                McpStatus.UnsupportedOS => "Unsupported OS",
-                McpStatus.MissingConfig => "Missing MCPForUnity Config",
-                McpStatus.Error => "Error",
-                McpStatus.VersionMismatch => "Version Mismatch",
-                _ => "Unknown",
-            };
+                case McpStatus.NotConfigured: return "Not Configured";
+                case McpStatus.Configured: return "Configured";
+                case McpStatus.Running: return "Running";
+                case McpStatus.Connected: return "Connected";
+                case McpStatus.IncorrectPath: return "Incorrect Path";
+                case McpStatus.CommunicationError: return "Communication Error";
+                case McpStatus.NoResponse: return "No Response";
+                case McpStatus.UnsupportedOS: return "Unsupported OS";
+                case McpStatus.MissingConfig: return "Missing MCPForUnity Config";
+                case McpStatus.Error: return "Error";
+                case McpStatus.VersionMismatch: return "Version Mismatch";
+                default: return "Unknown";
+            }
         }
 
         public void UpdateManualConfiguration()
@@ -836,7 +843,7 @@ namespace MCPForUnity.Editor.Windows.Components.ClientConfig
             if (string.IsNullOrWhiteSpace(dropdownValue))
                 return -1;
 
-            int directIndex = clientDropdown.choices?.IndexOf(dropdownValue) ?? -1;
+            int directIndex = clientDropdownChoices.IndexOf(dropdownValue);
             if (directIndex >= 0 && directIndex < configurators.Count)
                 return directIndex;
 

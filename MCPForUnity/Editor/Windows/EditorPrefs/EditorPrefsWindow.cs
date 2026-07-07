@@ -6,6 +6,7 @@ using System.Reflection;
 using MCPForUnity.Editor.Constants;
 using MCPForUnity.Editor.Helpers;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -122,6 +123,8 @@ namespace MCPForUnity.Editor.Windows
             }
 
             visualTree.CloneTree(rootVisualElement);
+            AddStyleSheet($"{basePath}/Editor/Windows/Components/Common.uss");
+            AddStyleSheet($"{basePath}/Editor/Windows/EditorPrefs/EditorPrefsWindow.uss");
 
             // Add search bar container at the top
             var searchContainer = new VisualElement();
@@ -326,8 +329,12 @@ namespace MCPForUnity.Editor.Windows
             var valueField = itemElement.Q<TextField>("value-field");
             valueField.value = item.Value;
 
-            var typeDropdown = itemElement.Q<DropdownField>("type-dropdown");
-            typeDropdown.index = (int)item.Type;
+            PopupField<string> typeDropdown = CreateTypeDropdown((int)item.Type);
+            var typeDropdownContainer = itemElement.Q<VisualElement>("type-dropdown-container");
+            if (typeDropdownContainer != null)
+            {
+                typeDropdownContainer.Add(typeDropdown);
+            }
 
             // Buttons
             var saveButton = itemElement.Q<Button>("save-button");
@@ -341,9 +348,30 @@ namespace MCPForUnity.Editor.Windows
             }
 
             // Callbacks
-            saveButton.clicked += () => SavePref(item, valueField.value, (EditorPrefType)typeDropdown.index);
+            if (typeDropdown != null)
+                saveButton.clicked += () => SavePref(item, valueField.value, (EditorPrefType)typeDropdown.index);
 
             return itemElement;
+        }
+
+        private static PopupField<string> CreateTypeDropdown(int index)
+        {
+            var choices = new List<string> { "String", "Int", "Float", "Bool" };
+            var dropdown = new PopupField<string>(choices, Mathf.Clamp(index, 0, choices.Count - 1))
+            {
+                name = "type-dropdown"
+            };
+            dropdown.AddToClassList("type-dropdown");
+            return dropdown;
+        }
+
+        private void AddStyleSheet(string assetPath)
+        {
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(assetPath);
+            if (styleSheet != null)
+            {
+                rootVisualElement.styleSheets.Add(styleSheet);
+            }
         }
 
         private void SavePref(EditorPrefItem item, string newValue, EditorPrefType newType)

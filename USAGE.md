@@ -1,0 +1,1 @@
+在unity工程Packages目录下创建com.coplaydev.unity-mcp文件夹，把MCPForUnity目录下的所有文件拷贝进去，重开unity工程

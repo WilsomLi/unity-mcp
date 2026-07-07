@@ -94,6 +94,22 @@
     flex-basis: 200px;
 }
 
+.client-dropdown-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.client-dropdown-field > .unity-popup-field__input {
+    height: 20px;
+    min-height: 20px;
+    max-height: 20px;
+}
+
 /* Validation Description */
 .validation-description {
     margin-top: 4px;
