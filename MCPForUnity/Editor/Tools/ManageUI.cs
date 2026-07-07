@@ -69,6 +69,7 @@ namespace MCPForUnity.Editor.Tools
                     case "update":
                         return UpdateFile(@params);
 
+#if UNITY_2021_2_OR_NEWER
                     case "attach_ui_document":
                         return AttachUIDocument(@params);
 
@@ -84,6 +85,22 @@ namespace MCPForUnity.Editor.Tools
                     case "render_ui":
                         return RenderUI(@params);
 
+                    case "detach_ui_document":
+                        return DetachUIDocument(@params);
+
+                    case "modify_visual_element":
+                        return ModifyVisualElement(@params);
+#else
+                    case "attach_ui_document":
+                    case "create_panel_settings":
+                    case "update_panel_settings":
+                    case "get_visual_tree":
+                    case "render_ui":
+                    case "detach_ui_document":
+                    case "modify_visual_element":
+                        return new ErrorResponse("UI Toolkit runtime (UIDocument/PanelSettings) requires Unity 2021.2 or newer.");
+#endif
+
                     case "link_stylesheet":
                         return LinkStylesheet(@params);
 
@@ -92,12 +109,6 @@ namespace MCPForUnity.Editor.Tools
 
                     case "list":
                         return ListUIAssets(@params);
-
-                    case "detach_ui_document":
-                        return DetachUIDocument(@params);
-
-                    case "modify_visual_element":
-                        return ModifyVisualElement(@params);
 
                     default:
                         return new ErrorResponse($"Unknown action: {action}");
@@ -296,6 +307,7 @@ namespace MCPForUnity.Editor.Tools
                 new { path });
         }
 
+#if UNITY_2021_2_OR_NEWER
         private static object AttachUIDocument(JObject @params)
         {
             var p = new ToolParams(@params);
@@ -495,6 +507,9 @@ namespace MCPForUnity.Editor.Tools
                 new { path, applied = changes });
         }
 
+#endif
+
+#if UNITY_2021_2_OR_NEWER
         private static PanelSettings CreateDefaultPanelSettings(string path)
         {
             string dir = Path.GetDirectoryName(path);
@@ -508,6 +523,12 @@ namespace MCPForUnity.Editor.Tools
             AssetDatabase.SaveAssets();
             return ps;
         }
+#else
+        private static object CreateDefaultPanelSettings(string path)
+        {
+            return new ErrorResponse("PanelSettings API requires Unity 2021.2 or newer.");
+        }
+#endif
 
         /// <summary>
         /// Generic, data-driven applicator for PanelSettings properties.
@@ -518,6 +539,7 @@ namespace MCPForUnity.Editor.Tools
         ///   clearColor, colorClearValue, clearDepthStencil,
         ///   themeStyleSheet, dynamicAtlasSettings.
         /// </summary>
+#if UNITY_2021_2_OR_NEWER
         private static void ApplyPanelSettingsProperties(PanelSettings ps, JObject settings, List<string> changes)
         {
             foreach (var prop in settings)
@@ -603,7 +625,9 @@ namespace MCPForUnity.Editor.Tools
                 }
             }
         }
+#endif
 
+#if UNITY_2021_2_OR_NEWER
         private static void ApplyDynamicAtlasSettings(PanelSettings ps, JObject da, List<string> changes)
         {
             var daCopy = ps.dynamicAtlasSettings;
@@ -620,6 +644,7 @@ namespace MCPForUnity.Editor.Tools
             ps.dynamicAtlasSettings = daCopy;
             changes.Add("dynamicAtlasSettings");
         }
+#endif
 
         // ── Tiny helpers to keep the switch compact ─────────────────────────
 
@@ -704,6 +729,7 @@ namespace MCPForUnity.Editor.Tools
             }
         }
 
+#if UNITY_2021_2_OR_NEWER
         private static object GetVisualTree(JObject @params)
         {
             var p = new ToolParams(@params);
@@ -753,6 +779,8 @@ namespace MCPForUnity.Editor.Tools
                     tree
                 });
         }
+
+#endif
 
         private static object SerializeVisualElement(VisualElement element, int depth, int maxDepth)
         {
@@ -816,6 +844,7 @@ namespace MCPForUnity.Editor.Tools
         private static bool s_pendingCaptureDone;
         private static bool s_pendingCaptureStarted;
 
+#if UNITY_2021_2_OR_NEWER
         private static object RenderUI(JObject @params)
         {
             var p = new ToolParams(@params);
@@ -1188,6 +1217,8 @@ namespace MCPForUnity.Editor.Tools
 
         // ---- Link Stylesheet ----
 
+#endif
+
         private static object LinkStylesheet(JObject @params)
         {
             var p = new ToolParams(@params);
@@ -1386,6 +1417,7 @@ namespace MCPForUnity.Editor.Tools
 
         // ---- Detach UIDocument ----
 
+#if UNITY_2021_2_OR_NEWER
         private static object DetachUIDocument(JObject @params)
         {
             var p = new ToolParams(@params);
@@ -1580,6 +1612,8 @@ namespace MCPForUnity.Editor.Tools
                 $"Modified element '{elementName}' on {go.name}: {string.Join(", ", applied)}",
                 responseData);
         }
+
+#endif
 
         private static void ApplyInlineStyles(VisualElement element, JObject styleObj, List<string> modifications)
         {

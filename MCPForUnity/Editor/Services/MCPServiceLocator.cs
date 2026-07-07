@@ -22,94 +22,17 @@ namespace MCPForUnity.Editor.Services
         private static TransportManager _transportManager;
         private static IPackageDeploymentService _packageDeploymentService;
 
-        public static IBridgeControlService Bridge
-        {
-            get
-            {
-                if (_bridgeService == null) _bridgeService = new BridgeControlService();
-                return _bridgeService;
-            }
-        }
-        public static IClientConfigurationService Client
-        {
-            get
-            {
-                if (_clientService == null) _clientService = new ClientConfigurationService();
-                return _clientService;
-            }
-        }
-        public static IPathResolverService Paths
-        {
-            get
-            {
-                if (_pathService == null) _pathService = new PathResolverService();
-                return _pathService;
-            }
-        }
-        public static ITestRunnerService Tests
-        {
-            get
-            {
-                if (_testRunnerService == null) _testRunnerService = new TestRunnerService();
-                return _testRunnerService;
-            }
-        }
-        public static IPackageUpdateService Updates
-        {
-            get
-            {
-                if (_packageUpdateService == null) _packageUpdateService = new PackageUpdateService();
-                return _packageUpdateService;
-            }
-        }
-        public static IPlatformService Platform
-        {
-            get
-            {
-                if (_platformService == null) _platformService = new PlatformService();
-                return _platformService;
-            }
-        }
-        public static IToolDiscoveryService ToolDiscovery
-        {
-            get
-            {
-                if (_toolDiscoveryService == null) _toolDiscoveryService = new ToolDiscoveryService();
-                return _toolDiscoveryService;
-            }
-        }
-        public static IResourceDiscoveryService ResourceDiscovery
-        {
-            get
-            {
-                if (_resourceDiscoveryService == null) _resourceDiscoveryService = new ResourceDiscoveryService();
-                return _resourceDiscoveryService;
-            }
-        }
-        public static IServerManagementService Server
-        {
-            get
-            {
-                if (_serverManagementService == null) _serverManagementService = new ServerManagementService();
-                return _serverManagementService;
-            }
-        }
-        public static TransportManager TransportManager
-        {
-            get
-            {
-                if (_transportManager == null) _transportManager = new TransportManager();
-                return _transportManager;
-            }
-        }
-        public static IPackageDeploymentService Deployment
-        {
-            get
-            {
-                if (_packageDeploymentService == null) _packageDeploymentService = new PackageDeploymentService();
-                return _packageDeploymentService;
-            }
-        }
+        public static IBridgeControlService Bridge => _bridgeService ?? (_bridgeService = new BridgeControlService());
+        public static IClientConfigurationService Client => _clientService ?? (_clientService = new ClientConfigurationService());
+        public static IPathResolverService Paths => _pathService ?? (_pathService = new PathResolverService());
+        public static ITestRunnerService Tests => _testRunnerService ?? (_testRunnerService = new TestRunnerService());
+        public static IPackageUpdateService Updates => _packageUpdateService ?? (_packageUpdateService = new PackageUpdateService());
+        public static IPlatformService Platform => _platformService ?? (_platformService = new PlatformService());
+        public static IToolDiscoveryService ToolDiscovery => _toolDiscoveryService ?? (_toolDiscoveryService = new ToolDiscoveryService());
+        public static IResourceDiscoveryService ResourceDiscovery => _resourceDiscoveryService ?? (_resourceDiscoveryService = new ResourceDiscoveryService());
+        public static IServerManagementService Server => _serverManagementService ?? (_serverManagementService = new ServerManagementService());
+        public static TransportManager TransportManager => _transportManager ?? (_transportManager = new TransportManager());
+        public static IPackageDeploymentService Deployment => _packageDeploymentService ?? (_packageDeploymentService = new PackageDeploymentService());
 
         /// <summary>
         /// Registers a custom implementation for a service (useful for testing)

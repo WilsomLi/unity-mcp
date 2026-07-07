@@ -63,12 +63,10 @@ namespace MCPForUnity.Editor.Services
             if (string.IsNullOrWhiteSpace(status))
                 return PackageJobStatus.Running;
 
-            return status.Trim().ToLowerInvariant() switch
-            {
-                "succeeded" => PackageJobStatus.Succeeded,
-                "failed" => PackageJobStatus.Failed,
-                _ => PackageJobStatus.Running
-            };
+            string lower = status.Trim().ToLowerInvariant();
+            if (lower == "succeeded") return PackageJobStatus.Succeeded;
+            if (lower == "failed") return PackageJobStatus.Failed;
+            return PackageJobStatus.Running;
         }
 
         private static void TryRestoreFromSessionState()
@@ -128,7 +126,7 @@ namespace MCPForUnity.Editor.Services
             try
             {
                 string packageName = ExtractPackageName(job.Package);
-                var allPackages = PackageInfo.GetAllRegisteredPackages();
+                var allPackages = UnityPackageManagerCompat.GetAllRegisteredPackages();
                 var info = FindPackageInfo(allPackages, packageName, job.Package);
 
                 if (job.Operation == "add" || job.Operation == "embed")

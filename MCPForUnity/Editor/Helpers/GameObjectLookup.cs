@@ -4,6 +4,9 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+#if !UNITY_2020_1_OR_NEWER
+using PrefabStageUtility = UnityEditor.Experimental.SceneManagement.PrefabStageUtility;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using MCPForUnity.Runtime.Helpers;
@@ -37,16 +40,14 @@ namespace MCPForUnity.Editor.Helpers
             if (string.IsNullOrEmpty(method))
                 return SearchMethod.ByName;
 
-            return method.ToLowerInvariant() switch
-            {
-                "by_name" => SearchMethod.ByName,
-                "by_tag" => SearchMethod.ByTag,
-                "by_layer" => SearchMethod.ByLayer,
-                "by_component" => SearchMethod.ByComponent,
-                "by_path" => SearchMethod.ByPath,
-                "by_id" => SearchMethod.ById,
-                _ => SearchMethod.ByName
-            };
+            string lower = method.ToLowerInvariant();
+            if (lower == "by_name") return SearchMethod.ByName;
+            if (lower == "by_tag") return SearchMethod.ByTag;
+            if (lower == "by_layer") return SearchMethod.ByLayer;
+            if (lower == "by_component") return SearchMethod.ByComponent;
+            if (lower == "by_path") return SearchMethod.ByPath;
+            if (lower == "by_id") return SearchMethod.ById;
+            return SearchMethod.ByName;
         }
 
         /// <summary>

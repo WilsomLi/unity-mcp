@@ -49,18 +49,17 @@ namespace MCPForUnity.Editor.Tools.Build
             BuildOptions buildOptions,
             int subtarget)
         {
-            var options = new BuildPlayerOptions
+            return new BuildPlayerOptions
             {
                 target = target,
                 targetGroup = BuildTargetMapping.GetTargetGroup(target),
                 locationPathName = outputPath,
                 scenes = scenes ?? GetDefaultScenes(),
-                options = buildOptions
-            };
+                options = buildOptions,
 #if UNITY_2021_2_OR_NEWER
-            options.subtarget = subtarget;
+                subtarget = subtarget
 #endif
-            return options;
+            };
         }
 
         public static BuildOptions ParseBuildOptions(string[] optionNames, bool development)
@@ -75,12 +74,20 @@ namespace MCPForUnity.Editor.Tools.Build
             {
                 switch (name.ToLowerInvariant())
                 {
-                    case "clean_build": opts |= BuildOptions.CleanBuildCache; break;
+                    case "clean_build":
+#if UNITY_2021_2_OR_NEWER
+                        opts |= BuildOptions.CleanBuildCache;
+#endif
+                        break;
                     case "auto_run": opts |= BuildOptions.AutoRunPlayer; break;
                     case "deep_profiling": opts |= BuildOptions.EnableDeepProfilingSupport; break;
                     case "compress_lz4": opts |= BuildOptions.CompressWithLz4; break;
                     case "strict_mode": opts |= BuildOptions.StrictMode; break;
-                    case "detailed_report": opts |= BuildOptions.DetailedBuildReport; break;
+                    case "detailed_report":
+#if UNITY_2021_2_OR_NEWER
+                        opts |= BuildOptions.DetailedBuildReport;
+#endif
+                        break;
                     case "allow_debugging": opts |= BuildOptions.AllowDebugging; break;
                     case "connect_profiler": opts |= BuildOptions.ConnectWithProfiler; break;
                     case "scripts_only": opts |= BuildOptions.BuildScriptsOnly; break;

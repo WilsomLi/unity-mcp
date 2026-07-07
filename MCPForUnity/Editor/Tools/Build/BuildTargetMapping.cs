@@ -1,11 +1,6 @@
 using System;
 using UnityEditor;
 using UnityEditor.Build;
-#if UNITY_2021_2_OR_NEWER
-using McpBuildTargetKey = UnityEditor.Build.NamedBuildTarget;
-#else
-using McpBuildTargetKey = UnityEditor.BuildTargetGroup;
-#endif
 
 namespace MCPForUnity.Editor.Tools.Build
 {
@@ -68,16 +63,12 @@ namespace MCPForUnity.Editor.Tools.Build
             }
         }
 
-        public static McpBuildTargetKey GetNamedBuildTarget(BuildTarget target)
+        public static BuildTargetGroup GetNamedBuildTarget(BuildTarget target)
         {
-#if UNITY_2021_2_OR_NEWER
-            return NamedBuildTarget.FromBuildTargetGroup(GetTargetGroup(target));
-#else
             return GetTargetGroup(target);
-#endif
         }
 
-        public static string TryResolveNamedBuildTarget(string name, out McpBuildTargetKey namedTarget)
+        public static string TryResolveNamedBuildTarget(string name, out BuildTargetGroup namedTarget)
         {
             if (!TryResolveBuildTarget(name, out var buildTarget))
             {
@@ -94,12 +85,7 @@ namespace MCPForUnity.Editor.Tools.Build
                     : $"Build target group could not be resolved for target '{buildTarget}'.";
             }
 
-
-#if UNITY_2021_2_OR_NEWER
-            namedTarget = NamedBuildTarget.FromBuildTargetGroup(targetGroup);
-#else
             namedTarget = targetGroup;
-#endif
             return null;
         }
 
@@ -168,16 +154,23 @@ namespace MCPForUnity.Editor.Tools.Build
 
         public static int ResolveSubtarget(string subtarget)
         {
-#if UNITY_2021_2_OR_NEWER
             if (string.IsNullOrEmpty(subtarget))
-                return (int)StandaloneBuildSubtarget.Player;
+                return GetPlayerSubtargetValue();
             string lower = subtarget.ToLowerInvariant();
             if (lower == "server")
-                return (int)StandaloneBuildSubtarget.Server;
-            return (int)StandaloneBuildSubtarget.Player;
-#else
-            return 0;
-#endif
+                return GetServerSubtargetValue();
+            return GetPlayerSubtargetValue();
         }
+
+#if UNITY_2021_2_OR_NEWER
+        private static int GetPlayerSubtargetValue() => (int)StandaloneBuildSubtarget.Player;
+        private static int GetServerSubtargetValue() => (int)StandaloneBuildSubtarget.Server;
+#else
+        // StandaloneBuildSubtarget does not exist in Unity 2019; use the underlying int values
+        // (Player = 1, Server = 2) which map to the 2021.2+ enum so behavior stays consistent
+        // where the subtarget field is honored.
+        private static int GetPlayerSubtargetValue() => 1;
+        private static int GetServerSubtargetValue() => 2;
+#endif
     }
 }

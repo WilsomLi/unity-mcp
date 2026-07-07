@@ -2,17 +2,12 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Build;
-#if UNITY_2021_2_OR_NEWER
-using McpBuildTargetKey = UnityEditor.Build.NamedBuildTarget;
-#else
-using McpBuildTargetKey = UnityEditor.BuildTargetGroup;
-#endif
 
 namespace MCPForUnity.Editor.Tools.Build
 {
     public static class BuildSettingsHelper
     {
-        public static object ReadProperty(string property, McpBuildTargetKey namedTarget)
+        public static object ReadProperty(string property, BuildTargetGroup namedTarget)
         {
             switch (property.ToLowerInvariant())
             {
@@ -23,29 +18,21 @@ namespace MCPForUnity.Editor.Tools.Build
                 case "version":
                     return new { property, value = PlayerSettings.bundleVersion };
                 case "bundle_id":
-                    return new { property, value = GetApplicationIdentifier(namedTarget) };
+                    return new { property, value = PlayerSettings.GetApplicationIdentifier(namedTarget) };
                 case "scripting_backend":
-                    var backend = GetScriptingBackend(namedTarget);
+                    var backend = PlayerSettings.GetScriptingBackend(namedTarget);
                     return new { property, value = backend == ScriptingImplementation.IL2CPP ? "il2cpp" : "mono" };
                 case "defines":
-                    return new { property, value = GetScriptingDefineSymbols(namedTarget) };
+                    return new { property, value = PlayerSettings.GetScriptingDefineSymbolsForGroup(namedTarget) };
                 case "architecture":
-                    var arch = GetArchitecture(namedTarget);
+                    var arch = PlayerSettings.GetArchitecture(namedTarget);
                     string archName;
                     switch (arch)
                     {
-                        case 0:
-                            archName = "x86_64";
-                            break;
-                        case 1:
-                            archName = "arm64";
-                            break;
-                        case 2:
-                            archName = "universal";
-                            break;
-                        default:
-                            archName = "unknown";
-                            break;
+                        case 0: archName = "x86_64"; break;
+                        case 1: archName = "arm64"; break;
+                        case 2: archName = "universal"; break;
+                        default: archName = "unknown"; break;
                     }
                     return new { property, value = archName, raw = arch };
                 default:
@@ -53,7 +40,7 @@ namespace MCPForUnity.Editor.Tools.Build
             }
         }
 
-        public static string WriteProperty(string property, string value, McpBuildTargetKey namedTarget)
+        public static string WriteProperty(string property, string value, BuildTargetGroup namedTarget)
         {
             try
             {
@@ -69,7 +56,7 @@ namespace MCPForUnity.Editor.Tools.Build
                         PlayerSettings.bundleVersion = value;
                         return null;
                     case "bundle_id":
-                        SetApplicationIdentifier(namedTarget, value);
+                        PlayerSettings.SetApplicationIdentifier(namedTarget, value);
                         return null;
                     case "scripting_backend":
                         var backendValue = value.ToLowerInvariant();
@@ -78,33 +65,25 @@ namespace MCPForUnity.Editor.Tools.Build
                         var impl = backendValue == "il2cpp"
                             ? ScriptingImplementation.IL2CPP
                             : ScriptingImplementation.Mono2x;
-                        SetScriptingBackend(namedTarget, impl);
+                        PlayerSettings.SetScriptingBackend(namedTarget, impl);
                         return null;
                     case "defines":
-                        SetScriptingDefineSymbols(namedTarget, value);
+                        PlayerSettings.SetScriptingDefineSymbolsForGroup(namedTarget, value);
                         return null;
                     case "architecture":
+                        string archLower = value.ToLowerInvariant();
                         int arch;
-                        switch (value.ToLowerInvariant())
-                        {
-                            case "x86_64":
-                            case "none":
-                            case "default":
-                                arch = 0;
-                                break;
-                            case "arm64":
-                                arch = 1;
-                                break;
-                            case "universal":
-                                arch = 2;
-                                break;
-                            default:
-                                arch = -1;
-                                break;
-                        }
+                        if (archLower == "x86_64" || archLower == "none" || archLower == "default")
+                            arch = 0;
+                        else if (archLower == "arm64")
+                            arch = 1;
+                        else if (archLower == "universal")
+                            arch = 2;
+                        else
+                            arch = -1;
                         if (arch < 0)
                             return $"Unknown architecture '{value}'. Valid: x86_64, arm64, universal";
-                        SetArchitecture(namedTarget, arch);
+                        PlayerSettings.SetArchitecture(namedTarget, arch);
                         return null;
                     default:
                         return $"Unknown property '{property}'. Valid: product_name, company_name, version, bundle_id, scripting_backend, defines, architecture";
@@ -121,78 +100,5 @@ namespace MCPForUnity.Editor.Tools.Build
             "product_name", "company_name", "version", "bundle_id",
             "scripting_backend", "defines", "architecture"
         };
-
-#if UNITY_2021_2_OR_NEWER
-        private static string GetApplicationIdentifier(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetApplicationIdentifier(target);
-        }
-
-        private static void SetApplicationIdentifier(McpBuildTargetKey target, string value)
-        {
-            PlayerSettings.SetApplicationIdentifier(target, value);
-        }
-
-        private static ScriptingImplementation GetScriptingBackend(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetScriptingBackend(target);
-        }
-
-        private static void SetScriptingBackend(McpBuildTargetKey target, ScriptingImplementation value)
-        {
-            PlayerSettings.SetScriptingBackend(target, value);
-        }
-
-        private static string GetScriptingDefineSymbols(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetScriptingDefineSymbols(target);
-        }
-
-        private static void SetScriptingDefineSymbols(McpBuildTargetKey target, string value)
-        {
-            PlayerSettings.SetScriptingDefineSymbols(target, value);
-        }
-#else
-        private static string GetApplicationIdentifier(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetApplicationIdentifier(target);
-        }
-
-        private static void SetApplicationIdentifier(McpBuildTargetKey target, string value)
-        {
-            PlayerSettings.SetApplicationIdentifier(target, value);
-        }
-
-        private static ScriptingImplementation GetScriptingBackend(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetScriptingBackend(target);
-        }
-
-        private static void SetScriptingBackend(McpBuildTargetKey target, ScriptingImplementation value)
-        {
-            PlayerSettings.SetScriptingBackend(target, value);
-        }
-
-        private static string GetScriptingDefineSymbols(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
-        }
-
-        private static void SetScriptingDefineSymbols(McpBuildTargetKey target, string value)
-        {
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(target, value);
-        }
-#endif
-
-        private static int GetArchitecture(McpBuildTargetKey target)
-        {
-            return PlayerSettings.GetArchitecture(target);
-        }
-
-        private static void SetArchitecture(McpBuildTargetKey target, int value)
-        {
-            PlayerSettings.SetArchitecture(target, value);
-        }
-
     }
 }

@@ -150,12 +150,14 @@ namespace MCPForUnity.Editor.Helpers
             try
             {
                 // Try to make a quick connection to see if it's an MCP for Unity server
-                var client = new TcpClient();
-                var connectTask = client.ConnectAsync(IPAddress.Loopback, port);
-                if (connectTask.Wait(100)) // 100ms timeout
+                using (var client = new TcpClient())
                 {
-                    // If connection succeeded, it's likely the MCP for Unity server
-                    return client.Connected;
+                    var connectTask = client.ConnectAsync(IPAddress.Loopback, port);
+                    if (connectTask.Wait(100)) // 100ms timeout
+                    {
+                        // If connection succeeded, it's likely the MCP for Unity server
+                        return client.Connected;
+                    }
                 }
                 return false;
             }
@@ -309,7 +311,8 @@ namespace MCPForUnity.Editor.Helpers
         {
             try
             {
-                SHA1 sha1 = SHA1.Create();
+            using (SHA1 sha1 = SHA1.Create())
+            {
                 byte[] bytes = Encoding.UTF8.GetBytes(input ?? string.Empty);
                 byte[] hashBytes = sha1.ComputeHash(bytes);
                 var sb = new StringBuilder();
@@ -317,7 +320,8 @@ namespace MCPForUnity.Editor.Helpers
                 {
                     sb.Append(b.ToString("x2"));
                 }
-                return sb.ToString().Substring(0, 8); // short, sufficient for filenames
+                return sb.ToString().Substring(0, Math.Min(8, sb.Length));
+            }
             }
             catch
             {

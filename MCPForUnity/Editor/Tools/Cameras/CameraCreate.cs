@@ -207,9 +207,10 @@ namespace MCPForUnity.Editor.Tools.Cameras
             if (blendStyle != null || blendDuration >= 0)
             {
                 // Set via SerializedProperty for the DefaultBlend struct
-                var so = new SerializedObject(brain);
-                var defaultBlendProp = so.FindProperty("DefaultBlend") ?? so.FindProperty("m_DefaultBlend");
-                if (defaultBlendProp != null)
+                using (var so = new SerializedObject(brain))
+                {
+                    var defaultBlendProp = so.FindProperty("DefaultBlend") ?? so.FindProperty("m_DefaultBlend");
+                    if (defaultBlendProp != null)
                 {
                     if (blendStyle != null)
                     {
@@ -230,7 +231,8 @@ namespace MCPForUnity.Editor.Tools.Cameras
                         if (timeProp != null)
                             timeProp.floatValue = blendDuration;
                     }
-                    so.ApplyModifiedProperties();
+                        so.ApplyModifiedProperties();
+                    }
                 }
             }
 

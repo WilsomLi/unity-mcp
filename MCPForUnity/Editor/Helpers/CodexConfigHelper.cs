@@ -78,9 +78,11 @@ namespace MCPForUnity.Editor.Helpers
             mcpServers["unityMCP"] = unityMCP;
             table["mcp_servers"] = mcpServers;
 
-            var writer = new StringWriter();
-            table.WriteTo(writer);
-            return writer.ToString();
+            using (var writer = new StringWriter())
+            {
+                table.WriteTo(writer);
+                return writer.ToString();
+            }
         }
 
         public static string UpsertCodexServerBlock(string existingToml, string uvPath)
@@ -106,9 +108,11 @@ namespace MCPForUnity.Editor.Helpers
             }
 
             // Serialize back to TOML
-            var writer = new StringWriter();
-            root.WriteTo(writer);
-            return writer.ToString();
+            using (var writer = new StringWriter())
+            {
+                root.WriteTo(writer);
+                return writer.ToString();
+            }
         }
 
         public static bool TryParseCodexServer(string toml, out string command, out string[] args)
@@ -160,8 +164,10 @@ namespace MCPForUnity.Editor.Helpers
 
             try
             {
-                var reader = new StringReader(toml);
-                return TOML.Parse(reader);
+                using (var reader = new StringReader(toml))
+                {
+                    return TOML.Parse(reader);
+                }
             }
             catch (TomlParseException)
             {

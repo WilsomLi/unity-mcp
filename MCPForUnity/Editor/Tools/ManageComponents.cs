@@ -6,6 +6,9 @@ using MCPForUnity.Editor.Helpers;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+#if !UNITY_2020_1_OR_NEWER
+using PrefabStageUtility = UnityEditor.Experimental.SceneManagement.PrefabStageUtility;
+#endif
 using UnityEngine;
 using MCPForUnity.Runtime.Helpers;
 
@@ -50,13 +53,10 @@ namespace MCPForUnity.Editor.Tools
 
             try
             {
-                return action switch
-                {
-                    "add" => AddComponent(@params, targetToken, searchMethod),
-                    "remove" => RemoveComponent(@params, targetToken, searchMethod),
-                    "set_property" => SetProperty(@params, targetToken, searchMethod),
-                    _ => new ErrorResponse($"Unknown action: '{action}'. Supported actions: add, remove, set_property")
-                };
+                if (action == "add") return AddComponent(@params, targetToken, searchMethod);
+                if (action == "remove") return RemoveComponent(@params, targetToken, searchMethod);
+                if (action == "set_property") return SetProperty(@params, targetToken, searchMethod);
+                return new ErrorResponse($"Unknown action: '{action}'. Supported actions: add, remove, set_property");
             }
             catch (Exception e)
             {

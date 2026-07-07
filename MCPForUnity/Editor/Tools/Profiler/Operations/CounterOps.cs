@@ -4,10 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using MCPForUnity.Editor.Helpers;
 using Newtonsoft.Json.Linq;
-#if UNITY_2020_2_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
-#endif
 using UnityEditor;
 
 namespace MCPForUnity.Editor.Tools.Profiler
@@ -16,10 +14,7 @@ namespace MCPForUnity.Editor.Tools.Profiler
     {
         internal static async Task<object> GetCountersAsync(JObject @params)
         {
-#if !UNITY_2020_2_OR_NEWER
-            await Task.CompletedTask;
-            return new ErrorResponse("Profiler counters require Unity 2020.2 or newer (ProfilerRecorder is unavailable in Unity 2019.4).");
-#else
+#if UNITY_2020_1_OR_NEWER
             var p = new ToolParams(@params);
             var categoryResult = p.GetRequired("category");
             if (!categoryResult.IsSuccess)
@@ -80,16 +75,20 @@ namespace MCPForUnity.Editor.Tools.Profiler
                 category = categoryName,
                 counters = data,
             });
+#else
+            await System.Threading.Tasks.Task.Yield();
+            return new ErrorResponse("Profiler counter capture requires Unity 2020.1 or newer.");
 #endif
         }
 
-#if UNITY_2020_2_OR_NEWER
-        private static List<string> GetRequestedCounters(ToolParams p, ProfilerCategory category)
+        private static List<string> GetRequestedCounters(ToolParams p, string categoryName)
         {
             var explicitCounters = p.GetStringArray("counters");
             if (explicitCounters != null && explicitCounters.Length > 0)
                 return explicitCounters.ToList();
 
+#if UNITY_2020_1_OR_NEWER
+            var category = TryResolveCategory(categoryName);
             var allHandles = new List<ProfilerRecorderHandle>();
             ProfilerRecorderHandle.GetAvailable(allHandles);
             return allHandles
@@ -98,6 +97,9 @@ namespace MCPForUnity.Editor.Tools.Profiler
                 .Select(d => d.Name)
                 .OrderBy(n => n)
                 .ToList();
+#else
+            return new List<string>();
+#endif
         }
 
         private static Task WaitOneFrameAsync()
@@ -128,6 +130,7 @@ namespace MCPForUnity.Editor.Tools.Profiler
             "Loading", "Input", "Vr", "Internal", "Particles", "FileIO", "VirtualTexturing"
         };
 
+#if UNITY_2020_1_OR_NEWER
         internal static ProfilerCategory? ResolveCategory(string name, out string error)
         {
             error = null;

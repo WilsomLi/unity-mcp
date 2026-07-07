@@ -229,14 +229,13 @@ namespace MCPForUnity.External.Tommy
 
         public string ToString(IFormatProvider formatProvider) => Value.ToString(formatProvider);
 
-        public override string ToInlineToml() =>
-            Value switch
-            {
-                var v when double.IsNaN(v) => TomlSyntax.NAN_VALUE,
-                var v when double.IsPositiveInfinity(v) => TomlSyntax.INF_VALUE,
-                var v when double.IsNegativeInfinity(v) => TomlSyntax.NEG_INF_VALUE,
-                var v => v.ToString("G", CultureInfo.InvariantCulture).ToLowerInvariant()
-            };
+        public override string ToInlineToml()
+        {
+            if (double.IsNaN(Value)) return TomlSyntax.NAN_VALUE;
+            if (double.IsPositiveInfinity(Value)) return TomlSyntax.INF_VALUE;
+            if (double.IsNegativeInfinity(Value)) return TomlSyntax.NEG_INF_VALUE;
+            return Value.ToString("G", CultureInfo.InvariantCulture).ToLowerInvariant();
+        }
     }
 
     public class TomlBoolean : TomlNode
@@ -298,13 +297,14 @@ namespace MCPForUnity.External.Tommy
         public override string ToString(string format, IFormatProvider formatProvider) =>
             Value.ToString(format, formatProvider);
 
-        public override string ToInlineToml() =>
-            Style switch
-            {
-                DateTimeStyle.Date => Value.ToString(TomlSyntax.LocalDateFormat),
-                DateTimeStyle.Time => Value.ToString(TomlSyntax.RFC3339LocalTimeFormats[SecondsPrecision]),
-                var _ => Value.ToString(TomlSyntax.RFC3339LocalDateTimeFormats[SecondsPrecision])
-            };
+        public override string ToInlineToml()
+        {
+            if (Style == DateTimeStyle.Date)
+                return Value.ToString(TomlSyntax.LocalDateFormat);
+            if (Style == DateTimeStyle.Time)
+                return Value.ToString(TomlSyntax.RFC3339LocalTimeFormats[SecondsPrecision]);
+            return Value.ToString(TomlSyntax.RFC3339LocalDateTimeFormats[SecondsPrecision]);
+        }
     }
 
     public class TomlArray : TomlNode
@@ -315,7 +315,15 @@ namespace MCPForUnity.External.Tommy
         public override bool IsArray { get; } = true;
         public bool IsMultiline { get; set; }
         public bool IsTableArray { get; set; }
-        public List<TomlNode> RawArray { get { if (values == null) values = new List<TomlNode>(); return values; } }
+        public List<TomlNode> RawArray
+        {
+            get
+            {
+                if (values == null)
+                    values = new List<TomlNode>();
+                return values;
+            }
+        }
 
         public override TomlNode this[int index]
         {
@@ -426,7 +434,15 @@ namespace MCPForUnity.External.Tommy
         public override bool HasValue { get; } = false;
         public override bool IsTable { get; } = true;
         public bool IsInline { get; set; }
-        public Dictionary<string, TomlNode> RawTable { get { if (children == null) children = new Dictionary<string, TomlNode>(); return children; } }
+        public Dictionary<string, TomlNode> RawTable
+        {
+            get
+            {
+                if (children == null)
+                    children = new Dictionary<string, TomlNode>();
+                return children;
+            }
+        }
 
         public override TomlNode this[string key]
         {
@@ -517,7 +533,14 @@ namespace MCPForUnity.External.Tommy
             if (collapsedItems.Count == 0)
                 return;
 
-            var hasRealValues = !collapsedItems.All(n => n.Value is TomlTable { IsInline: false } or TomlArray { IsTableArray: true });
+            var hasRealValues = !collapsedItems.All(n =>
+            {
+                var tbl = n.Value as TomlTable;
+                if (tbl != null && !tbl.IsInline) return true;
+                var arr = n.Value as TomlArray;
+                if (arr != null && arr.IsTableArray) return true;
+                return false;
+            });
 
             Comment?.AsComment(tw);
 
@@ -539,7 +562,14 @@ namespace MCPForUnity.External.Tommy
             foreach (var collapsedItem in collapsedItems)
             {
                 var key = collapsedItem.Key;
-                if (collapsedItem.Value is TomlArray { IsTableArray: true } or TomlTable { IsInline: false })
+                var isArrayTable = false;
+                var arr = collapsedItem.Value as TomlArray;
+                if (arr != null) isArrayTable = arr.IsTableArray;
+                var isInlineTable = false;
+                var tbl = collapsedItem.Value as TomlTable;
+                if (tbl != null) isInlineTable = !tbl.IsInline;
+
+                if (isArrayTable || isInlineTable)
                 {
                     if (!first) tw.WriteLine();
                     first = false;
@@ -686,7 +716,8 @@ namespace MCPForUnity.External.Tommy
                     // Start of a comment; ignore until newline
                     if (c == TomlSyntax.COMMENT_SYMBOL)
                     {
-                        if (latestComment == null) latestComment = new StringBuilder();
+                        if (latestComment == null)
+                            latestComment = new StringBuilder();
                         latestComment.AppendLine(ParseComment());
                         AdvanceLine(1);
                         continue;
@@ -991,12 +1022,11 @@ namespace MCPForUnity.External.Tommy
                     };
                 }
 
-                return c switch
-                {
-                    TomlSyntax.INLINE_TABLE_START_SYMBOL => ReadInlineTable(),
-                    TomlSyntax.ARRAY_START_SYMBOL => ReadArray(),
-                    var _ => ReadTomlValue()
-                };
+                if (c == TomlSyntax.INLINE_TABLE_START_SYMBOL)
+                    return ReadInlineTable();
+                if (c == TomlSyntax.ARRAY_START_SYMBOL)
+                    return ReadArray();
+                return ReadTomlValue();
             }
 
             return null;
@@ -1131,24 +1161,39 @@ namespace MCPForUnity.External.Tommy
         private TomlNode ReadTomlValue()
         {
             var value = ReadRawValue();
-            TomlNode node = value switch
+            if (TomlSyntax.IsBoolean(value))
             {
-                var v when TomlSyntax.IsBoolean(v) => bool.Parse(v),
-                var v when TomlSyntax.IsNaN(v) => double.NaN,
-                var v when TomlSyntax.IsPosInf(v) => double.PositiveInfinity,
-                var v when TomlSyntax.IsNegInf(v) => double.NegativeInfinity,
-                var v when TomlSyntax.IsInteger(v) => long.Parse(value.RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR),
-                                                                 CultureInfo.InvariantCulture),
-                var v when TomlSyntax.IsFloat(v) => double.Parse(value.RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR),
-                                                                 CultureInfo.InvariantCulture),
-                var v when TomlSyntax.IsIntegerWithBase(v, out var numberBase) => new TomlInteger
+                return bool.Parse(value);
+            }
+            if (TomlSyntax.IsNaN(value))
+            {
+                return double.NaN;
+            }
+            if (TomlSyntax.IsPosInf(value))
+            {
+                return double.PositiveInfinity;
+            }
+            if (TomlSyntax.IsNegInf(value))
+            {
+                return double.NegativeInfinity;
+            }
+            if (TomlSyntax.IsInteger(value))
+            {
+                return long.Parse(value.RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR), CultureInfo.InvariantCulture);
+            }
+            if (TomlSyntax.IsFloat(value))
+            {
+                return double.Parse(value.RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR), CultureInfo.InvariantCulture);
+            }
+            int numberBase;
+            if (TomlSyntax.IsIntegerWithBase(value, out numberBase))
+            {
+                return new TomlInteger
                 {
-                    Value = Convert.ToInt64(value.Substring(2).RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR), numberBase),
+                    Value = Convert.ToInt64(value.Substring(2).RemoveAll(TomlSyntax.INT_NUMBER_SEPARATOR), (int)numberBase),
                     IntegerBase = (TomlInteger.Base)numberBase
-                },
-                var _ => null
-            };
-            if (node != null) return node;
+                };
+            }
 
             // Normalize by removing space separator
             value = value.Replace(TomlSyntax.RFC3339EmptySeparator, TomlSyntax.ISO861Separator);
@@ -1654,7 +1699,7 @@ namespace MCPForUnity.External.Tommy
                     }
 
                     latestNode = currentNode;
-                    if (latestNode is TomlTable { IsInline: true })
+                    if (latestNode is TomlTable && ((TomlTable)latestNode).IsInline)
                         return AddError($"Cannot assign {".".Join(path)} because it will edit an immutable table.");
                 }
 
@@ -1696,7 +1741,7 @@ namespace MCPForUnity.External.Tommy
                         continue;
                     }
 
-                    if (node is TomlTable { IsInline: true })
+                    if (node is TomlTable && ((TomlTable)node).IsInline)
                     {
                         AddError($"Cannot create table {".".Join(path)} because it will edit an immutable table.");
                         return null;
@@ -1704,13 +1749,14 @@ namespace MCPForUnity.External.Tommy
 
                     if (node.HasValue)
                     {
-                        if (!(node is TomlArray { IsTableArray: true } array))
+                        var arrCheck = node as TomlArray;
+                        if (arrCheck == null || !arrCheck.IsTableArray)
                         {
                             AddError($"The key {".".Join(path)} has a value assigned to it!");
                             return null;
                         }
 
-                        latestNode = array[array.ChildrenCount - 1];
+                        latestNode = arrCheck[arrCheck.ChildrenCount - 1];
                         continue;
                     }
 
@@ -1722,7 +1768,7 @@ namespace MCPForUnity.External.Tommy
                             return null;
                         }
 
-                        if (node is TomlTable { isImplicit: false })
+                        if (node is TomlTable && !((TomlTable)node).isImplicit)
                         {
                             AddError($"The table {".".Join(path)} is defined multiple times!");
                             return null;
@@ -1779,8 +1825,10 @@ namespace MCPForUnity.External.Tommy
 
         public static TomlTable Parse(TextReader reader)
         {
-            var parser = new TOMLParser(reader) { ForceASCII = ForceASCII };
-            return parser.Parse();
+            using (var parser = new TOMLParser(reader) { ForceASCII = ForceASCII })
+            {
+                return parser.Parse();
+            }
         }
     }
 
@@ -1838,13 +1886,13 @@ namespace MCPForUnity.External.Tommy
         public const string POS_INF_VALUE = "+inf";
         public const string NEG_INF_VALUE = "-inf";
 
-        public static bool IsBoolean(string s) { return s == TRUE_VALUE || s == FALSE_VALUE; }
+        public static bool IsBoolean(string s) => s == TRUE_VALUE || s == FALSE_VALUE;
 
-        public static bool IsPosInf(string s) { return s == INF_VALUE || s == POS_INF_VALUE; }
+        public static bool IsPosInf(string s) => s == INF_VALUE || s == POS_INF_VALUE;
 
         public static bool IsNegInf(string s) => s == NEG_INF_VALUE;
 
-        public static bool IsNaN(string s) { return s == NAN_VALUE || s == POS_NAN_VALUE || s == NEG_NAN_VALUE; }
+        public static bool IsNaN(string s) => s == NAN_VALUE || s == POS_NAN_VALUE || s == NEG_NAN_VALUE;
 
         public static bool IsInteger(string s) => IntegerPattern.IsMatch(s);
 
@@ -1962,11 +2010,11 @@ namespace MCPForUnity.External.Tommy
 
         public static readonly char[] NewLineCharacters = { NEWLINE_CHARACTER, NEWLINE_CARRIAGE_RETURN_CHARACTER };
 
-        public static bool IsQuoted(char c) { return c == BASIC_STRING_SYMBOL || c == LITERAL_STRING_SYMBOL; }
+        public static bool IsQuoted(char c) => c == BASIC_STRING_SYMBOL || c == LITERAL_STRING_SYMBOL;
 
-        public static bool IsWhiteSpace(char c) { return c == ' ' || c == '\t'; }
+        public static bool IsWhiteSpace(char c) => c == ' ' || c == '\t';
 
-        public static bool IsNewLine(char c) { return c == NEWLINE_CHARACTER || c == NEWLINE_CARRIAGE_RETURN_CHARACTER; }
+        public static bool IsNewLine(char c) => c == NEWLINE_CHARACTER || c == NEWLINE_CARRIAGE_RETURN_CHARACTER;
 
         public static bool IsLineBreak(char c) => c == NEWLINE_CHARACTER;
 
@@ -1979,14 +2027,12 @@ namespace MCPForUnity.External.Tommy
         {
             var result = (c >= '\u0000' && c <= '\u0008') || c == '\u000b' || c == '\u000c' || (c >= '\u000e' && c <= '\u001f') || c == '\u007f';
             if (!allowNewLines)
-                result |= c >= '\u000a' && c <= '\u000e';
+                result |= (c >= '\u000a' && c <= '\u000e');
             return result;
         }
 
-        public static bool IsValueSeparator(char c)
-        {
-            return c == ITEM_SEPARATOR || c == ARRAY_END_SYMBOL || c == INLINE_TABLE_END_SYMBOL;
-        }
+        public static bool IsValueSeparator(char c) =>
+            c == ITEM_SEPARATOR || c == ARRAY_END_SYMBOL || c == INLINE_TABLE_END_SYMBOL;
 
         #endregion
     }
@@ -2057,23 +2103,26 @@ namespace MCPForUnity.External.Tommy
             {
                 var c = txt[i];
 
-                static string CodePoint(string txt, ref int i, char c) => char.IsSurrogatePair(txt, i)
-                    ? $"\\U{char.ConvertToUtf32(txt, i++):X8}"
-                    : $"\\u{(ushort)c:X4}";
+                string CodePoint(string txt2, ref int i2, char c2) => char.IsSurrogatePair(txt2, i2)
+                    ? $"\\U{char.ConvertToUtf32(txt2, i2++):X8}"
+                    : $"\\u{(ushort)c2:X4}";
 
-                stringBuilder.Append(c switch
+                switch (c)
                 {
-                    '\b' => @"\b",
-                    '\t' => @"\t",
-                    '\n' when escapeNewlines => @"\n",
-                    '\f' => @"\f",
-                    '\r' when escapeNewlines => @"\r",
-                    '\\' => @"\\",
-                    '\"' => @"\""",
-                    var _ when TomlSyntax.MustBeEscaped(c, !escapeNewlines) || TOML.ForceASCII && c > sbyte.MaxValue =>
-                        CodePoint(txt, ref i, c),
-                    var _ => c
-                });
+                    case '\b': stringBuilder.Append(@"\b"); break;
+                    case '\t': stringBuilder.Append(@"\t"); break;
+                    case '\n' when escapeNewlines: stringBuilder.Append(@"\n"); break;
+                    case '\f': stringBuilder.Append(@"\f"); break;
+                    case '\r' when escapeNewlines: stringBuilder.Append(@"\r"); break;
+                    case '\\': stringBuilder.Append(@"\\"); break;
+                    case '\"': stringBuilder.Append(@"\"""); break;
+                    default:
+                        if (TomlSyntax.MustBeEscaped(c, !escapeNewlines) || TOML.ForceASCII && c > sbyte.MaxValue)
+                            stringBuilder.Append(CodePoint(txt, ref i, c));
+                        else
+                            stringBuilder.Append(c);
+                        break;
+                }
             }
 
             return stringBuilder.ToString();
@@ -2108,27 +2157,27 @@ namespace MCPForUnity.External.Tommy
                 if (num >= txt.Length) break;
                 var c = txt[next];
 
-                static string CodePoint(int next, string txt, ref int num, int size)
+                string CodePoint(int next2, string txt2, ref int num2, int size)
                 {
-                    if (next + size >= txt.Length) throw new Exception("Undefined escape sequence!");
-                    num += size;
-                    return char.ConvertFromUtf32(Convert.ToInt32(txt.Substring(next + 1, size), 16));
+                    if (next2 + size >= txt2.Length) throw new Exception("Undefined escape sequence!");
+                    num2 += size;
+                    return char.ConvertFromUtf32(Convert.ToInt32(txt2.Substring(next2 + 1, size), 16));
                 }
 
-                stringBuilder.Append(c switch
+                switch (c)
                 {
-                    'b' => "\b",
-                    't' => "\t",
-                    'n' => "\n",
-                    'f' => "\f",
-                    'r' => "\r",
-                    '\'' => "\'",
-                    '\"' => "\"",
-                    '\\' => "\\",
-                    'u' => CodePoint(next, txt, ref num, 4),
-                    'U' => CodePoint(next, txt, ref num, 8),
-                    var _ => throw new Exception("Undefined escape sequence!")
-                });
+                    case 'b': stringBuilder.Append("\b"); break;
+                    case 't': stringBuilder.Append("\t"); break;
+                    case 'n': stringBuilder.Append("\n"); break;
+                    case 'f': stringBuilder.Append("\f"); break;
+                    case 'r': stringBuilder.Append("\r"); break;
+                    case '\'': stringBuilder.Append("\'"); break;
+                    case '\"': stringBuilder.Append("\""); break;
+                    case '\\': stringBuilder.Append("\\"); break;
+                    case 'u': stringBuilder.Append(CodePoint(next, txt, ref num, 4)); break;
+                    case 'U': stringBuilder.Append(CodePoint(next, txt, ref num, 8)); break;
+                    default: throw new Exception("Undefined escape sequence!");
+                }
                 i = num + 2;
             }
 

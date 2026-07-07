@@ -75,6 +75,7 @@ namespace MCPForUnity.Editor.Tools.Build
         public string JobId { get; }
         public BuildJobState State { get; set; } = BuildJobState.Pending;
         public List<BuildJob> Children { get; } = new List<BuildJob>();
+
         public int CurrentIndex { get; set; } = -1;
 
         public BatchJob(string jobId)

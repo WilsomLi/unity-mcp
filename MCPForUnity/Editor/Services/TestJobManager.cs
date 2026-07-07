@@ -152,12 +152,9 @@ namespace MCPForUnity.Editor.Services
             }
 
             string s = status.Trim().ToLowerInvariant();
-            return s switch
-            {
-                "succeeded" => TestJobStatus.Succeeded,
-                "failed" => TestJobStatus.Failed,
-                _ => TestJobStatus.Running
-            };
+            if (s == "succeeded") return TestJobStatus.Succeeded;
+            if (s == "failed") return TestJobStatus.Failed;
+            return TestJobStatus.Running;
         }
 
         private static void TryRestoreFromSessionState()

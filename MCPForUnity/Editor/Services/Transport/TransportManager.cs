@@ -34,17 +34,17 @@ namespace MCPForUnity.Editor.Services.Transport
 
         private IMcpTransportClient GetOrCreateClient(TransportMode mode)
         {
-            switch (mode)
+            if (mode == TransportMode.Http)
             {
-                case TransportMode.Http:
-                    if (_httpClient == null) _httpClient = _webSocketFactory();
-                    return _httpClient;
-                case TransportMode.Stdio:
-                    if (_stdioClient == null) _stdioClient = _stdioFactory();
-                    return _stdioClient;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode");
+                if (_httpClient == null) _httpClient = _webSocketFactory();
+                return _httpClient;
             }
+            if (mode == TransportMode.Stdio)
+            {
+                if (_stdioClient == null) _stdioClient = _stdioFactory();
+                return _stdioClient;
+            }
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode");
         }
 
         public async Task<bool> StartAsync(TransportMode mode)
@@ -113,12 +113,9 @@ namespace MCPForUnity.Editor.Services.Transport
 
         public TransportState GetState(TransportMode mode)
         {
-            return mode switch
-            {
-                TransportMode.Http => _httpState,
-                TransportMode.Stdio => _stdioState,
-                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode"),
-            };
+            if (mode == TransportMode.Http) return _httpState;
+            if (mode == TransportMode.Stdio) return _stdioState;
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode");
         }
 
         public bool IsRunning(TransportMode mode) => GetState(mode).IsConnected;
@@ -164,12 +161,9 @@ namespace MCPForUnity.Editor.Services.Transport
         /// </summary>
         public IMcpTransportClient GetClient(TransportMode mode)
         {
-            return mode switch
-            {
-                TransportMode.Http => _httpClient,
-                TransportMode.Stdio => _stdioClient,
-                _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode"),
-            };
+            if (mode == TransportMode.Http) return _httpClient;
+            if (mode == TransportMode.Stdio) return _stdioClient;
+            throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported transport mode");
         }
 
         private void UpdateState(TransportMode mode, TransportState state)

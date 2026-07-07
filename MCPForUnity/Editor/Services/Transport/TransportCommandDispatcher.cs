@@ -381,7 +381,7 @@ namespace MCPForUnity.Editor.Services.Transport
                             logStatus = "ERROR";
                             logError = t.Exception?.InnerException?.Message;
                         }
-                        else if (t.IsCompletedSuccessfully && t.Result != null)
+                        else if (t.Status == TaskStatus.RanToCompletion && t.Result != null)
                         {
                             try
                             {
@@ -429,8 +429,10 @@ namespace MCPForUnity.Editor.Services.Transport
             PendingCommand pending = null;
             lock (PendingLock)
             {
-                if (Pending.Remove(id, out pending))
+                if (Pending.TryGetValue(id, out pending))
                 {
+                    System.Collections.Generic.IDictionary<string, PendingCommand> pendingDict = Pending;
+                    pendingDict.Remove(id);
                     UnhookUpdateIfIdle();
                 }
             }

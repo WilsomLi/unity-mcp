@@ -5,7 +5,7 @@ using MCPForUnity.Editor.Helpers;
 using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEngine;
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_1_OR_NEWER
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 #endif
@@ -39,17 +39,17 @@ namespace MCPForUnity.Editor.Tools.Graphics
         };
 
         // === stats_get ===
+#if UNITY_2020_1_OR_NEWER
         internal static object GetStats(JObject @params)
         {
-#if !UNITY_2020_2_OR_NEWER
-            return new ErrorResponse("Rendering stats require Unity 2020.2 or newer (ProfilerRecorder is unavailable in Unity 2019.4).");
-#else
             var stats = new Dictionary<string, object>();
 
             foreach (var (counterName, jsonKey) in COUNTER_MAP)
             {
-                var recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, counterName);
-                stats[jsonKey] = recorder.Valid ? recorder.CurrentValue : 0;
+                using (var recorder = ProfilerRecorder.StartNew(ProfilerCategory.Render, counterName))
+                {
+                    stats[jsonKey] = recorder.Valid ? recorder.CurrentValue : 0;
+                }
             }
 
             return new
@@ -58,15 +58,18 @@ namespace MCPForUnity.Editor.Tools.Graphics
                 message = "Rendering stats captured.",
                 data = stats
             };
-#endif
         }
+#else
+        internal static object GetStats(JObject @params)
+        {
+            return new ErrorResponse("ProfilerRecorder API requires Unity 2020.1 or newer.");
+        }
+#endif
 
         // === stats_list_counters ===
+#if UNITY_2020_1_OR_NEWER
         internal static object ListCounters(JObject @params)
         {
-#if !UNITY_2020_2_OR_NEWER
-            return new ErrorResponse("Profiler counter listing requires Unity 2020.2 or newer (ProfilerRecorder is unavailable in Unity 2019.4).");
-#else
             var p = new ToolParams(@params);
             string categoryName = p.Get("category");
 
@@ -96,8 +99,13 @@ namespace MCPForUnity.Editor.Tools.Graphics
                 message = $"Found {counters.Count} counters in category '{category.Name}'.",
                 data = new { counters }
             };
-#endif
         }
+#else
+        internal static object ListCounters(JObject @params)
+        {
+            return new ErrorResponse("ProfilerRecorder API requires Unity 2020.1 or newer.");
+        }
+#endif
 
         // === stats_set_scene_debug_mode ===
         internal static object SetSceneDebugMode(JObject @params)
@@ -154,6 +162,7 @@ namespace MCPForUnity.Editor.Tools.Graphics
         }
 
         // --- Helper: Try to resolve a ProfilerCategory by name ---
+#if UNITY_2020_1_OR_NEWER
         private static ProfilerCategory TryResolveCategory(string name)
         {
             // ProfilerCategory has static properties for well-known categories
@@ -177,5 +186,6 @@ namespace MCPForUnity.Editor.Tools.Graphics
                 default: return ProfilerCategory.Render;
             }
         }
+#endif
     }
 }

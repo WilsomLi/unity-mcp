@@ -90,9 +90,8 @@ namespace MCPForUnity.Editor.Tools
                 var impl = backendLower == "il2cpp"
                     ? ScriptingImplementation.IL2CPP
                     : ScriptingImplementation.Mono2x;
-                SetScriptingBackend(namedTarget, impl);
+                PlayerSettings.SetScriptingBackend(namedTarget, impl);
             }
-
 
 #if UNITY_6000_0_OR_NEWER
             string profilePath = p.Get("profile");
@@ -112,18 +111,6 @@ namespace MCPForUnity.Editor.Tools
             var job = new BuildJob(jobId, target, outputPath);
             return BuildRunner.ScheduleBuild(job, options);
         }
-
-#if UNITY_2021_2_OR_NEWER
-        private static void SetScriptingBackend(UnityEditor.Build.NamedBuildTarget target, ScriptingImplementation impl)
-        {
-            PlayerSettings.SetScriptingBackend(target, impl);
-        }
-#else
-        private static void SetScriptingBackend(BuildTargetGroup target, ScriptingImplementation impl)
-        {
-            PlayerSettings.SetScriptingBackend(target, impl);
-        }
-#endif
 
 #if UNITY_6000_0_OR_NEWER
         private static object HandleProfileBuild(ToolParams p, string profilePath, string outputPath,
@@ -254,8 +241,8 @@ namespace MCPForUnity.Editor.Tools
             // Capture previous target before switching
             string previousTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
 
-            string subtargetStr = p.Get("subtarget");
 #if UNITY_2021_2_OR_NEWER
+            string subtargetStr = p.Get("subtarget");
             if (!string.IsNullOrEmpty(subtargetStr))
             {
                 string subtargetLower = subtargetStr.ToLowerInvariant();
@@ -264,9 +251,6 @@ namespace MCPForUnity.Editor.Tools
                 else if (subtargetLower == "player")
                     EditorUserBuildSettings.standaloneBuildSubtarget = StandaloneBuildSubtarget.Player;
             }
-#else
-            if (!string.IsNullOrEmpty(subtargetStr) && subtargetStr.ToLowerInvariant() == "server")
-                McpLog.Warn("Server subtarget requires Unity 2021.2 or newer; ignoring on this Unity version.");
 #endif
 
             // SwitchActiveBuildTarget is synchronous — blocks until reimport completes
@@ -502,7 +486,7 @@ namespace MCPForUnity.Editor.Tools
 #if UNITY_2021_2_OR_NEWER
                     int subtarget = (int)StandaloneBuildSubtarget.Player;
 #else
-                    int subtarget = 0;
+                    int subtarget = 1;
 #endif
                     var options = BuildRunner.CreateBuildOptions(
                         child.Target, child.OutputPath, null, buildOpts, subtarget);
